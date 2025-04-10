@@ -1,16 +1,8 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-import time
+
+from playwright.sync_api import sync_playwright
 import re
 import requests
 from bs4 import BeautifulSoup
-
-# Chrome path config for Streamlit Cloud
-CHROMIUM_PATH = "/usr/bin/google-chrome-stable"
-CHROMEDRIVER_PATH = "/usr/bin/chromedriver"
 
 def get_email_from_website(url):
     try:
@@ -23,63 +15,59 @@ def get_email_from_website(url):
         return "Not found"
 
 def scrape_google_maps(keyword, location):
-    options = Options()
-    options.binary_location = CHROMIUM_PATH
-    options.add_argument('--headless')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-
-    service = Service(executable_path=CHROMEDRIVER_PATH)
-    driver = webdriver.Chrome(service=service, options=options)
-
-    driver.get("https://www.google.com/maps")
-    time.sleep(2)
-
-    search_box = driver.find_element(By.ID, "searchboxinput")
-    search_box.clear()
-    search_box.send_keys(f"{keyword} in {location}")
-    search_box.send_keys(Keys.ENTER)
-    time.sleep(5)
-
     results = []
-    listings = driver.find_elements(By.XPATH, '//a[contains(@href, "/place")]')[:10]
 
-    for i in range(len(listings)):
-        try:
-            listings[i].click()
-            time.sleep(4)
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+        search_query = f"{keyword} in {location}"
+        page.goto("https://www.google.com/maps", timeout=60000)
+        page.wait_for_timeout(4000)
 
+        page.fill("input#searchboxinput", search_query)
+        page.keyboard.press("Enter")
+        page.wait_for_timeout(6000)
+
+        listings = page.locator('//a[contains(@href, "/place")]')
+        count = listings.count()
+
+        for i in range(min(10, count)):
             try:
-                name = driver.find_element(By.XPATH, '//h1[contains(@class,"DUwDvf")]').text
+                link = listings.nth(i)
+                link.click()
+                page.wait_for_timeout(4000)
+
+                try:
+                    name = page.locator('//h1[contains(@class,"DUwDvf")]').first.text_content()
+                except:
+                    name = "N/A"
+
+                try:
+                    address = page.locator('//div[contains(@class,"Io6YTe") and contains(text(),",")]').first.text_content()
+                except:
+                    address = "N/A"
+
+                try:
+                    website_button = page.locator('//a[contains(@data-value,"Website")]').first
+                    website_url = website_button.get_attribute("href")
+                except:
+                    website_url = ""
+
+                email = get_email_from_website(website_url) if website_url else "Not found"
+
+                results.append({
+                    "Business Name": name,
+                    "Address": address,
+                    "Maps URL": page.url,
+                    "Email": email
+                })
+
+                page.go_back()
+                page.wait_for_timeout(3000)
+                listings = page.locator('//a[contains(@href, "/place")]')
             except:
-                name = "N/A"
+                continue
 
-            try:
-                address = driver.find_element(By.XPATH, '//div[contains(@class,"Io6YTe") and contains(text(),",")]').text
-            except:
-                address = "N/A"
+        browser.close()
 
-            try:
-                website_button = driver.find_element(By.XPATH, '//a[contains(@data-value,"Website")]')
-                website_url = website_button.get_attribute('href')
-            except:
-                website_url = ""
-
-            email = get_email_from_website(website_url) if website_url else "Not found"
-
-            results.append({
-                "Business Name": name,
-                "Address": address,
-                "Maps URL": driver.current_url,
-                "Email": email
-            })
-
-            driver.back()
-            time.sleep(3)
-            listings = driver.find_elements(By.XPATH, '//a[contains(@href, "/place")]')[:10]
-
-        except:
-            continue
-
-    driver.quit()
     return results
