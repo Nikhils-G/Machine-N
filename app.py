@@ -2,6 +2,17 @@ import streamlit as st
 import pandas as pd
 from maps_scraper import scrape_google_maps
 
+
+
+import os
+import subprocess
+
+# Run setup.sh to install Playwright with deps
+if not os.path.exists("/home/appuser/.playwright-setup-done"):
+    subprocess.run(["chmod", "+x", "setup.sh"])
+    subprocess.run(["./setup.sh"])
+    open("/home/appuser/.playwright-setup-done", "w").close()
+
 # ==============================================
 # PREMIUM UI CONFIGURATION
 # ==============================================
