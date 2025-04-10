@@ -64,9 +64,8 @@ While not using a neural network, this project uses:
 - 🧠 **Rule-based automation** to smartly extract business profiles  
 - 📬 **Pattern-matching enrichment** (for email discovery)  
 - 📈 **Heuristic lead scoring** based on email presence  
-- Optional: expandable with GPT tagging or classification
+- **Optional: expandable with GPT tagging or classification**
 
 ---
 
-## 🚧 Folder Structure
 
