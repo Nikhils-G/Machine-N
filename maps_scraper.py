@@ -1,11 +1,15 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 import time
 import re
 import requests
 from bs4 import BeautifulSoup
+
+CHROMIUM_PATH = "/usr/bin/chromium-browser"
+CHROMEDRIVER_PATH = "/usr/bin/chromedriver"
 
 def get_email_from_website(url):
     try:
@@ -19,12 +23,14 @@ def get_email_from_website(url):
 
 def scrape_google_maps(keyword, location):
     options = Options()
+    options.binary_location = CHROMIUM_PATH
     options.add_argument('--headless')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument("user-agent=Mozilla/5.0")
 
-    driver = webdriver.Chrome(options=options)
+    service = Service(executable_path=CHROMEDRIVER_PATH)
+    driver = webdriver.Chrome(service=service, options=options)
     driver.get("https://www.google.com/maps")
     time.sleep(2)
 
