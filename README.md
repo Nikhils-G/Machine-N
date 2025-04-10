@@ -37,7 +37,7 @@ Ideal for sales teams, marketers, and startup growth hackers who need hyperlocal
 
 ## 📸 UI Preview
 
-![screenshot](https://imgur.com/a/4E3cW11.png) <!-- Replace with your actual screenshot URL -->
+![Lead Generator UI](https://i.imgur.com/B9Z1SUP.png)
 
 ---
 
